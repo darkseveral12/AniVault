@@ -1,0 +1,38 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+// prisma/schema.prisma
+datasource db {
+  provider  = "postgresql"
+  url  	    = env("DATABASE_URL")
+  // uncomment next line if you use Prisma <5.10
+  // directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+model User {
+  id Int @default(autoincrement()) @id
+  username String?
+  email String @unique
+  password String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AnimeList {
+  id         Int      @id @default(autoincrement())
+  userId     Int                        // just store the user's id manually
+  animeTitle String                     // just store the anime title directly
+  status     String                     // "watching", "completed", "dropped", etc
+  score      Int?                       // rating, optional
+  progress   Int      @default(0)       // episodes watched
+  notes      String?                    // personal notes, optional
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

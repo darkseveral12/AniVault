@@ -1,11 +1,17 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { ConflictException, Injectable } from '@nestjs/common';
 import { AuthPayLoadDto } from './dto/auth.dto';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { SignupPayLoadDto } from './dto/sign-auth.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
+
 @Injectable()
 export class AuthService {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private prismaService: PrismaService,
+  ) {}
 
   private fakeUsers = [
     {
@@ -38,9 +44,9 @@ export class AuthService {
   }
 
   async signup(signupPayloadDto: SignupPayLoadDto) {
-    const findUser = this.fakeUsers.find(
-      (user) => user.email === signupPayloadDto.email,
-    );
+    const findUser = await this.prismaService.user.findUnique({
+      where: { email: signupPayloadDto.email },
+    });
 
     if (findUser) throw new ConflictException('Email already existing');
 
@@ -48,15 +54,13 @@ export class AuthService {
     const password = signupPayloadDto.password;
     const hash = await bcrypt.hash(password, saltOrRounds);
 
-    const newUser = {
-      ...signupPayloadDto,
-      password: hash,
-    };
+    const newUser = await this.prismaService.user.create({
+      data: {
+        ...signupPayloadDto,
+        password: hash,
+      },
+    });
 
-    this.fakeUsers = [...this.fakeUsers, newUser];
-    const token = this.signToken(newUser);
-
-    console.log(token);
-    return token;
+    return this.signToken(newUser);
   }
 }
